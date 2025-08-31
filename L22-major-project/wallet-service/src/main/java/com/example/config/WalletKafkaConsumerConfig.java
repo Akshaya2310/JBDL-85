@@ -1,5 +1,7 @@
 package com.example.config;
 
+import com.example.service.WalletService;
+import com.example.dto.TxnInitPayload;
 import com.example.dto.UserCreatedPayload;
 import com.example.entity.Wallet;
 import com.example.repo.WalletRepo;
@@ -13,6 +15,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.KafkaListener;
 
+import java.util.concurrent.ExecutionException;
+
 @Configuration
 public class WalletKafkaConsumerConfig {
 
@@ -24,6 +28,9 @@ public class WalletKafkaConsumerConfig {
     @Autowired
     private WalletRepo walletRepo;
 
+    @Autowired
+    private WalletService walletService;
+
     @KafkaListener(topics = "${user.created.topic}", groupId = "wallet")
     public void consumeUserCreateTopic(ConsumerRecord payload) throws JsonProcessingException {
         UserCreatedPayload userCreatedPayload = OBJECT_MAPPER.readValue(payload.value().toString(), UserCreatedPayload.class);
@@ -34,6 +41,16 @@ public class WalletKafkaConsumerConfig {
         wallet.setUserId(userCreatedPayload.getUserId());
         wallet.setUserEmail(userCreatedPayload.getUserEmail());
         walletRepo.save(wallet);
+        MDC.clear();;
+    }
+
+
+    @KafkaListener(topics = "${txn.init.topic}", groupId = "wallet")
+    public void consumeTxnInitTopic(ConsumerRecord payload) throws JsonProcessingException, ExecutionException, InterruptedException {
+        TxnInitPayload txnInitPayload = OBJECT_MAPPER.readValue(payload.value().toString(), TxnInitPayload.class);
+        MDC.put("requestId", txnInitPayload.getRequestId());
+        LOGGER.info("Read from kafka : {}", txnInitPayload);
+        walletService.walletTxn(txnInitPayload);
         MDC.clear();;
     }
 

@@ -6,10 +6,14 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.io.Serializable;
+
 @Getter
 @Setter
 @ToString
-public class UserDto {
+public class UserDto implements Serializable {
+
+    private static final long serialVersionUID = 1l;
 
     @NotNull
     private String name;
@@ -22,5 +26,6 @@ public class UserDto {
 
     @NotNull
     private String kycNumber;
+    // 1234-1345-12345 = 12**-****-**45
 
 }
